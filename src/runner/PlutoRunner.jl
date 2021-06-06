@@ -490,8 +490,15 @@ The MIMEs that Pluto supports, in order of how much I like them.
 
 `text/plain` should always match - the difference between `show(::IO, ::MIME"text/plain", x)` and `show(::IO, x)` is an unsolved mystery.
 """
-const allmimes = [MIME"application/vnd.pluto.table+object"(); MIME"text/html"(); imagemimes; MIME"application/vnd.pluto.tree+object"(); MIME"text/latex"(); MIME"text/plain"()]
-
+const allmimes = [
+    MIME"application/vnd.pluto.table+object"();
+    MIME"text/html"();
+    imagemimes;
+    MIME"application/vnd.pluto.tree+object"();
+    MIME"text/latex"();
+    MIME"application/vnd.pluto.truncatedstring+object"();
+    MIME"text/plain"()
+]
 
 """
 Format `val` using the richest possible output, return formatted string and used MIME type.
@@ -636,6 +643,8 @@ function show_richest(io::IO, @nospecialize(x))::Tuple{<:Any,MIME}
         texed = repr(mime, x)
         html(io, Markdown.LaTeX("\\text{$texed}"))
         nothing, MIME"text/html"()
+    elseif mime isa MIME"application/vnd.pluto.truncatedstring+object"
+        truncated_string_data(x, io), mime
     else
         # the classic:
         show(io, mime, x)
@@ -667,6 +676,23 @@ pluto_showable(::MIME"application/vnd.pluto.tree+object", ::AbstractRange) = fal
 
 pluto_showable(::MIME"application/vnd.pluto.tree+object", ::Any) = false
 
+pluto_showable(::MIME"application/vnd.pluto.truncatedstring+object", ::String) = true
+
+function truncated_string_data(@nospecialize(x::String), context::IOContext)
+    str_chunk_len = 7
+    elements = String[]
+    smallest = min(length(x), str_chunk_len)
+    push!(elements, x[1:smallest])
+    if length(x) > str_chunk_len
+        push!(elements, "more")
+    end
+
+    Dict{Symbol,Any}(
+        :objectid => string(objectid(x), base=16),
+        :type => :TruncatedString,
+        :elements => elements
+    )
+end
 
 # in the next functions you see a `context` argument
 # this is really only used for the circular reference tracking

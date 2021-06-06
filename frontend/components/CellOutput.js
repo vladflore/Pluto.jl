@@ -106,7 +106,6 @@ export const OutputBody = ({ mime, body, cell_id, persist_js_state = false, last
         case "image/bmp":
         case "image/svg+xml":
             return html`<div><${PlutoImage} mime=${mime} body=${body} /></div>`
-            break
         case "text/html":
             // Snippets starting with <!DOCTYPE or <html are considered "full pages" that get their own iframe.
             // Not entirely sure if this works the best, or if this slows down notebooks with many plots.
@@ -123,19 +122,21 @@ export const OutputBody = ({ mime, body, cell_id, persist_js_state = false, last
                     last_run_timestamp=${last_run_timestamp}
                 />`
             }
-            break
         case "application/vnd.pluto.tree+object":
             return html`<div>
                 <${TreeView} cell_id=${cell_id} body=${body} persist_js_state=${persist_js_state} />
             </div>`
-            break
         case "application/vnd.pluto.table+object":
             return html` <${TableView} cell_id=${cell_id} body=${body} persist_js_state=${persist_js_state} />`
-            break
         case "application/vnd.pluto.stacktrace+object":
             return html`<div><${ErrorMessage} cell_id=${cell_id} ...${body} /></div>`
-            break
-
+        case "application/vnd.pluto.truncatedstring+object":
+            return html`<div>
+                <pre class="no-block"><code>${body.elements.map((r) => 
+                        r === "more" ? "..." : r
+                    )}</code></pre>
+            </div>
+            `
         case "text/plain":
             if (body) {
                 return html`<div>
@@ -144,10 +145,8 @@ export const OutputBody = ({ mime, body, cell_id, persist_js_state = false, last
             } else {
                 return html`<div></div>`
             }
-            break
         default:
             return html``
-            break
     }
 }
 

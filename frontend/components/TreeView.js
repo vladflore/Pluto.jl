@@ -30,6 +30,13 @@ const SimpleOutputBody = ({ mime, body, cell_id, persist_js_state }) => {
             break
         case "text/plain":
             return html`<pre class="no-block">${body}</pre>`
+        case "application/vnd.pluto.truncatedstring+object":
+            return html`<div>
+                <pre class="no-block"><code>${body.elements.map((r) => 
+                        r === "more" ? "..." : r
+                    )}</code></pre>
+            </div>
+            `
         default:
             return html`<pre title="Something went wrong displaying this object">🛑</pre>`
             break
